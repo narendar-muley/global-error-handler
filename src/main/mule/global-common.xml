@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <configuration-properties doc:name="Configuration properties" doc:id="e68a2f3b-6b4b-4385-8372-cf6a3b9a733d" file="configs/${mule.env}.yaml" />
+   
+ 
+    <http:request-config name="apigee-token-HTTP_Request" doc:name="HTTP Request configuration" doc:id="d6a74038-c59e-4f5f-bce3-d417043e9537" responseTimeout="${apigee.response.timeout}">
+        <http:request-connection protocol="HTTPS" host="${apigee.host}" connectionIdleTimeout="${apigee.connection.idleTimeout}">
+            <reconnection >
+				<reconnect frequency="${apigee.retry.frequency}" count="${apigee.retry.attempts}" />
+			</reconnection>
+			<http:authentication>
+                <http:basic-authentication username="${secure::apigee.basicAuthUser}" password="${secure::apigee.basicAuthPassword}" />
+            </http:authentication>
+        </http:request-connection>
+    </http:request-config>
+    <http:request-config name="send-email-HTTP_Request" doc:name="HTTP Request configuration" doc:id="da74a421-6616-4016-bc91-2afd2bcbca5e" responseTimeout="${apigee.response.timeout}">
+        <http:request-connection protocol="HTTPS" host="${apigee.host}" connectionIdleTimeout="${apigee.connection.idleTimeout}">
+			<reconnection >
+				<reconnect frequency="${apigee.retry.frequency}" count="${apigee.retry.attempts}" />
+			</reconnection>
+		</http:request-connection>
+    </http:request-config>
+    <json-logger:config name="JSON_Logger_Config_Common" doc:name="JSON Logger Config" doc:id="a2ff1841-5650-4da2-886c-f0d1c50ec503" environment="${mule.env}" />
+    <configuration-properties doc:name="Configuration properties" doc:id="befad8c8-68f6-4cb9-9640-dc76521c5218" file="configs/config.yaml" />
+    <os:config name="ObjectStore_Config_Common" doc:name="ObjectStore Config" doc:id="85fc5e58-2026-47ba-ac20-51c18db57463" />
+    <os:object-store name="token_Object_store_Common" doc:name="Object store" doc:id="3ae206ad-ddc7-40ac-84bb-ae6b5006ccd2" maxEntries="${apigee.cache.maxEntries}" entryTtl="${apigee.cache.entryTTL}" config-ref="ObjectStore_Config_Common" expirationInterval="${apigee.cache.expInterval}" expirationIntervalUnit="SECONDS" />
+    <ee:object-store-caching-strategy name="Access_Token_Cache_Common" doc:name="Caching Strategy" doc:id="baf56786-192b-443a-b33a-ac4fece4e70e" keyGenerationExpression="#[vars.tokenRequest.grant_type]" objectStore="token_Object_store_Common" />
+    <secure-properties:config name="Secure_Properties_Config_Common" doc:name="Secure Properties Config" doc:id="610b401d-4890-4bb4-80ad-a29ebdaeac08" file="configs/secure-${mule.env}.yaml" key="${mule.key}" />
+</mule>

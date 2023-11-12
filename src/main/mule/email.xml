@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+<flow name="email_send-email" doc:id="8e8c57bd-dfe1-4cdb-a285-2fb4dfc76483" >
+		<json-logger:logger doc:name="Start Logger" doc:id="405be463-5330-47e0-8729-ba311030a723" config-ref="JSON_Logger_Config_Common" message="Entering Impl Flow :: email_send-email">
+			<json-logger:content ><![CDATA[Entering Impl Flow :: email_send-email]]></json-logger:content>
+		</json-logger:logger>
+				<set-variable value="#[payload]" doc:name="Store Incoming Payload" doc:id="0d28dd97-a1f8-44b4-bec0-3bd1bec61ea0" variableName="originalPayload" mimeType="application/json"/>
+				<set-variable value='#[%dw 2.0&#10;&#10;output application/x-www-form-urlencoded&#10;&#10;---&#10;{&#10;scope: "public",&#10;grant_type: "client_credentials"&#10;}]' doc:name="Token Request" doc:id="8835252e-9f65-4ac0-9bfa-e749255bed67" variableName="tokenRequest"/>
+	<!-- 	<until-successful maxRetries="${reconnect.attempts}" doc:name="Until Successful" doc:id="de4bce8b-e628-4284-b4da-3f7d317205d5" millisBetweenRetries="${reconnect.frequency}">
+ -->
+		<json-logger:logger doc:name="Before Token" doc:id="3c22642f-a1b0-45d5-af07-412550bdc746" config-ref="JSON_Logger_Config_Common" message="Before Token :: email_send-email" tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[Before Token :: email_send-email]]></json-logger:content>
+		</json-logger:logger>
+		<ee:cache doc:name="Cache" doc:id="b75df1cf-6da0-40bd-b948-4834d0882aa0" cachingStrategy-ref="Access_Token_Cache_Common">
+			<http:request method="POST" doc:name="Access Token Request" doc:id="a0369c75-b593-4080-a323-943672a00d58" config-ref="apigee-token-HTTP_Request" path="/${apigee.version}/${apigee.token}">
+			<http:body><![CDATA[#[vars.tokenRequest]]]></http:body>
+			<http:headers><![CDATA[#[output application/json skipNullOn = "everywhere"
+---
+{
+	"apiKey" : p('secure::apigee.apiKey'),
+	"meta-src-envrmt" : p('ols.env.value')
+	
+}]]]></http:headers>
+		</http:request>
+			<logger level="DEBUG" doc:name="Log Token" doc:id="c10e8043-3667-479b-bcff-a2877bb2ed5d" message="After Token :: post-ols-enrollment-impl-flow '#[payload]'" />
+		</ee:cache>
+		<json-logger:logger doc:name="After Token" doc:id="d7050b62-4feb-4e43-8855-8ba6ab96e7e2" config-ref="JSON_Logger_Config_Common" message="After Token :: email_send-email" tracePoint="AFTER_REQUEST">
+			<json-logger:content><![CDATA[After Token :: email_send-email]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable value="#[payload.access_token]" doc:name="Access Token" doc:id="a42d2815-4b32-462b-8ad6-244b9223440e" variableName="accessToken"/>
+		<logger level="DEBUG" doc:name="Log Response" doc:id="20052d10-587e-4cc4-8b4f-3e94a1ba10b9" message="PAYLOAD BEFORE OLS CALL:      #[vars.siebelRequest]"/>
+		<json-logger:logger doc:name="Before APIGEE Request" doc:id="126a7d9d-f133-4d8d-bc2b-264442470916" config-ref="JSON_Logger_Config_Common" message="Before Sending Email" tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[Before Sending Email]]></json-logger:content>
+		</json-logger:logger>
+		<try doc:name="Try" doc:id="be6d496b-20a0-4aa5-9c77-1ff6ab3303a8" >
+			<ee:transform doc:name="SendEmailRequest" doc:id="ad1dec08-40c4-4871-9844-ba2c0b1188f5" >
+					<ee:message >
+						<ee:set-payload resource="dwl/send-email.dwl" />
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="apigee-backend-endpoint" doc:id="3bb56df9-09af-4e31-9b49-591c5ad50c5f" config-ref="send-email-HTTP_Request" path="/${apigee.version}/${apigee.email}">
+				<http:headers><![CDATA[#[output application/json skipNullOn = "everywhere"
+---
+{
+	"apiKey" : p ('secure::apigee.apiKey'),
+	"Authorization" : "Bearer " ++ vars.accessToken,
+	"Content-Type" : "application/json",
+	"meta-src-envrmt" : p('ols.env.value')
+
+}]]]></http:headers>
+			</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8c3f6e39-05c4-4f8f-8b5c-5823043899be" >
+					<logger level="INFO" doc:name="Logger" doc:id="925e18a5-b0d8-4702-80e7-35b00b514c02" message="OLS BACKEND POST CALL FAILED:      #[error.errorMessage.payload]" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<json-logger:logger doc:name="After APIGEE Call" doc:id="b59174a3-00cd-4c9c-81bf-efa83efe7034" config-ref="JSON_Logger_Config_Common" message="After Sending Email" tracePoint="AFTER_REQUEST">
+			<json-logger:content><![CDATA[After Sending Email]]></json-logger:content>
+		</json-logger:logger>
+	</flow>
+</mule>

@@ -1,0 +1,28 @@
+app:
+  version: "v1"
+
+# HTTP Ports
+http:
+  host: "0.0.0.0"
+  port: "8081"
+https:
+  host: "0.0.0.0"
+  port: "8081"
+
+
+# HTTP status code messages *
+errors:
+  error-code-400: "BAD_REQUEST"
+  error-code-404: "NOT_FOUND"
+  error-code-405: "METHOD_NOT_ALLOWED"
+  error-code-406: "NOT_ACCEPTABLE"
+  error-code-415: "UNSUPPORTED_MEDIA_TYPE"
+  error-code-500: "INTERNAL_SERVER_ERROR"
+  error-code-501: "NOT_IMPLEMENTED"
+  
+
+json.logger.application: 
+  name: ${project.artifactId}
+  version: ${project.version}
+  
+  

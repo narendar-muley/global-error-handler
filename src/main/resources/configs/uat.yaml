@@ -1,0 +1,26 @@
+apigee:
+  host: "api-np.entity.com"
+  port: "443"
+  version: "v1"
+  token: "oauth/accesstoken"
+  email: "member/utility/email-utility"
+  cache:
+    entryTTL: "600"  #seconds  
+    expInterval: "300"  #seconds  
+    maxEntries: "100"
+  connection:
+    idleTimeout: "30000"  #milli seconds  
+  response:
+    timeout: "30000"      #milli seconds  
+  retry:
+    frequency : "2000"   #milli seconds  
+    attempts: "2" 
+    
+    
+email:
+  sender-id: "noreply.contactsupdate@noreply.empireblue.com"
+  receiver-id: "employeename@entity.com"
+  
+  to-mark-secure: "true"
+  body-content-type: "Text"
+  
